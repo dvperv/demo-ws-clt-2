@@ -1,7 +1,9 @@
 package org.dp;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dp.model.AppCsrfToken;
 import org.dp.model.OutputMessage;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -9,24 +11,38 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.lang.reflect.Type;
+import java.util.Base64;
 
 @Slf4j
 @Configuration
 public class ClientConfiguration {
-    private final String url = "ws://localhost:8080/stomp";
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+        return builder.build();
+    }
 
     @Bean
-    WebSocketStompClient client(StompSessionHandler handler){
+    WebSocketStompClient client(StompSessionHandler handler, RestTemplate restTemplate){
         WebSocketStompClient webSocketStompClient = new WebSocketStompClient(
                 new StandardWebSocketClient()
         );
 
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
-        webSocketStompClient.connectAsync(url, handler);
+        String url = "ws://localhost:8080/stomp";
+//        String token = restTemplate.getForObject("http://localhost:8080/csrf", AppCsrfToken.class).token();
+
+        WebSocketHttpHeaders webSocketHttpHeaders = new WebSocketHttpHeaders();
+        String auth = "user" + ":" + "password";
+        webSocketHttpHeaders.add("Authorization", "Basic " + new String(Base64.getEncoder().encode(auth.getBytes())));
+//        webSocketHttpHeaders.add("X-CSRF-TOKEN", token);
+
+        webSocketStompClient.connectAsync(url, webSocketHttpHeaders, handler);
 
         return webSocketStompClient;
     }
