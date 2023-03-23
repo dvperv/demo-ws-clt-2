@@ -17,7 +17,7 @@ import java.lang.reflect.Type;
 @Slf4j
 @Configuration
 public class ClientConfiguration {
-    private final String url = "ws://localhost:8080/chat";
+    private final String url = "ws://localhost:8080/stomp";
 
     @Bean
     WebSocketStompClient client(StompSessionHandler handler){
@@ -36,7 +36,7 @@ public class ClientConfiguration {
         return new StompSessionHandler() {
             @Override
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-                log.info("Subscribe to /chat");
+                log.info("Subscribe...");
                 session.subscribe("/topic/messages", this);
             }
 
