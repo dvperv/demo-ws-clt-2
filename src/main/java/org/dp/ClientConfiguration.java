@@ -43,7 +43,7 @@ public class ClientConfiguration {
             @Override
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                 log.info("Subscribe...");
-//                session.subscribe("/topic/messages", this);
+                session.subscribe("/topic/messages", this);
                 session.subscribe("/user/queue/messages", this);
             }
 
