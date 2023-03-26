@@ -29,7 +29,7 @@ public class ClientConfiguration {
         String url = "ws://localhost:8080/stomp";
 
         WebSocketHttpHeaders webSocketHttpHeaders = new WebSocketHttpHeaders();
-        String auth = "user" + ":" + "password";
+        String auth = "user1" + ":" + "password";
         webSocketHttpHeaders.add("Authorization", "Basic " + new String(Base64.getEncoder().encode(auth.getBytes())));
 
         webSocketStompClient.connectAsync(url, webSocketHttpHeaders, handler);
@@ -43,7 +43,8 @@ public class ClientConfiguration {
             @Override
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                 log.info("Subscribe...");
-                session.subscribe("/topic/messages", this);
+//                session.subscribe("/topic/messages", this);
+                session.subscribe("/user/queue/messages", this);
             }
 
             @Override
