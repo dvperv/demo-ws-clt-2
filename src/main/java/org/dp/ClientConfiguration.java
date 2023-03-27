@@ -44,7 +44,7 @@ public class ClientConfiguration {
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                 log.info("Subscribe...");
 //                session.subscribe("/topic/messages", this);
-                session.subscribe("/user/queue/messages", this);
+                session.subscribe("/user/queue", this);
             }
 
             @Override
