@@ -5,41 +5,53 @@ import org.dp.model.OutputMessage;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.messaging.simp.stomp.StompHeaders;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSessionHandler;
+import org.springframework.messaging.simp.stomp.*;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Configuration
 public class ClientConfiguration {
     @Bean
-    WebSocketStompClient client(StompSessionHandler handler){
+    public WebSocketStompClient client(StompSessionHandlerAdapter handler) {
         WebSocketStompClient webSocketStompClient = new WebSocketStompClient(
                 new StandardWebSocketClient()
         );
-
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
-        String url = "ws://localhost:8080/stomp";
 
         WebSocketHttpHeaders webSocketHttpHeaders = new WebSocketHttpHeaders();
         String auth = "user1" + ":" + "password";
-        webSocketHttpHeaders.add("Authorization", "Basic " + new String(Base64.getEncoder().encode(auth.getBytes())));
-
-        webSocketStompClient.connectAsync(url, webSocketHttpHeaders, handler);
+        webSocketHttpHeaders.add("Authorization", "Basic " +
+                Base64.getEncoder().encodeToString(auth.getBytes())
+        );
+        webSocketStompClient.connectAsync("ws://localhost:8080/stomp", webSocketHttpHeaders, handler);
 
         return webSocketStompClient;
     }
 
     @Bean
-    StompSessionHandler handler(){
-        return new StompSessionHandler() {
+    public StompSessionHandlerAdapter handlerAdapter(){
+        return new StompSessionHandlerAdapter() {
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return OutputMessage.class;
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                OutputMessage message = (OutputMessage) payload;
+                log.info("Received : " + message.getText() + " from : " + message.getFrom() + " at " + message.getTime());
+            }
+
             @Override
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                 log.info("Subscribe...");
@@ -55,17 +67,6 @@ public class ClientConfiguration {
             @Override
             public void handleTransportError(StompSession session, Throwable exception) {
                 log.error("Got a transport error", exception);
-            }
-
-            @Override
-            public Type getPayloadType(StompHeaders headers) {
-                return OutputMessage.class;
-            }
-
-            @Override
-            public void handleFrame(StompHeaders headers, Object payload) {
-                OutputMessage message = (OutputMessage) payload;
-                log.info("Received : " + message.getText() + " from : " + message.getFrom() + " at " + message.getTime());
             }
         };
     }
